@@ -1,4 +1,5 @@
-streamlit==1.37.1
-torch>=2.0.0
-transformers>=4.41.0
+streamlit
+torch
+transformers
 Pillow
+accelerate
