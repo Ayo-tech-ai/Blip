@@ -1,6 +1,7 @@
 import streamlit as st
 from PIL import Image
 from transformers import BlipProcessor, BlipForConditionalGeneration
+from transformers import Blip2Processor, Blip2ForConditionalGeneration
 import torch
 
 # Page configuration
@@ -16,9 +17,8 @@ st.write("Upload an image, and this AI model will describe what it sees!")
 @st.cache_resource
 def load_model():
     """Load BLIP model and processor once (cached)."""
-    processor = BlipProcessor.from_pretrained("Salesforce/blip-image-captioning-base")
-    model = BlipForConditionalGeneration.from_pretrained("Salesforce/blip-image-captioning-base")
-    return processor, model
+    processor = Blip2Processor.from_pretrained("Salesforce/blip2-opt-2.7b")
+    model = Blip2ForConditionalGeneration.from_pretrained("Salesforce/blip2-opt-2.7b")
 
 # Load model
 processor, model = load_model()
