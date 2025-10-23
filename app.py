@@ -34,7 +34,7 @@ if uploaded_file is not None:
     # Caption generation
     with st.spinner("Generating description... 🧠"):
         inputs = processor(images=image, return_tensors="pt")
-        output = model.generate(**inputs, max_new_tokens=50)
+        output = model.generate(**inputs, max_new_tokens=450)
         caption = processor.decode(output[0], skip_special_tokens=True)
 
     st.success("✅ Done!")
