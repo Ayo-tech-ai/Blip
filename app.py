@@ -1,64 +1,72 @@
 import os
 os.environ["WATCHDOG_OBSERVER"] = "polling"  # prevent Streamlit inotify error
-
 import streamlit as st
+from transformers import VisionEncoderDecoderModel, ViTImageProcessor, AutoTokenizer
 from PIL import Image
-from transformers import InstructBlipProcessor, InstructBlipForConditionalGeneration
 import torch
 
-# Streamlit page setup
+# -----------------------------
+# PAGE CONFIG
+# -----------------------------
 st.set_page_config(
-    page_title="🌿 InstructBLIP Image Describer",
-    page_icon="🧠",
+    page_title="🌿 ViT-GPT2 Image Captioner",
+    page_icon="🌿",
     layout="centered"
 )
 
-st.title("🌿 InstructBLIP Image Describer")
-st.write("Upload an image, and this app will generate a detailed, intelligent description based on what it sees.")
+st.title("🌿 ViT-GPT2 Image Describer")
+st.write("Upload an image, and this app will generate a detailed caption describing what it sees.")
 
+# -----------------------------
+# LOAD MODEL
+# -----------------------------
 @st.cache_resource
 def load_model():
-    """Load InstructBLIP model and processor (cached)."""
-    model_name = "Salesforce/instructblip-flan-t5-base"
-    processor = InstructBlipProcessor.from_pretrained(model_name)
-    model = InstructBlipForConditionalGeneration.from_pretrained(model_name)
-    return processor, model
+    model_name = "nlpconnect/vit-gpt2-image-captioning"
+    model = VisionEncoderDecoderModel.from_pretrained(model_name)
+    feature_extractor = ViTImageProcessor.from_pretrained(model_name)
+    tokenizer = AutoTokenizer.from_pretrained(model_name)
+    return model, feature_extractor, tokenizer
 
-processor, model = load_model()
+model, feature_extractor, tokenizer = load_model()
 
+# -----------------------------
+# SETUP DEVICE
+# -----------------------------
+device = "cuda" if torch.cuda.is_available() else "cpu"
+model.to(device)
+
+# -----------------------------
+# IMAGE UPLOAD SECTION
+# -----------------------------
 uploaded_file = st.file_uploader("📸 Upload an image", type=["jpg", "jpeg", "png"])
 
 if uploaded_file is not None:
     image = Image.open(uploaded_file).convert("RGB")
-    st.image(image, caption="Uploaded Image", use_column_width=True)
+    st.image(image, caption="🖼️ Uploaded Image", use_column_width=True)
 
-    # Select description style
-    description_mode = st.radio(
-        "🗒️ Choose description style:",
-        ["General Description", "Detailed Scientific (Plant Focused)"]
-    )
+    # Caption Generation Button
+    if st.button("✨ Generate Description"):
+        with st.spinner("Analyzing image... please wait."):
+            # Preprocess image
+            pixel_values = feature_extractor(images=image, return_tensors="pt").pixel_values.to(device)
 
-    if description_mode == "General Description":
-        prompt = "Describe this image in clear, detailed English sentences."
-    else:
-        prompt = (
-            "Describe this plant leaf in detail, focusing on visible color, texture, shape, "
-            "and any signs of disease such as spots, discoloration, wilting, or curling."
+            # Generate caption
+            output_ids = model.generate(pixel_values, max_length=64, num_beams=4)
+            caption = tokenizer.decode(output_ids[0], skip_special_tokens=True).strip()
+
+        # Display result
+        st.success("✅ Description Generated:")
+        st.markdown(f"**{caption}**")
+
+        # Optional: Expand with explanation
+        st.info(
+            "💡 This description was generated using a vision-language transformer. "
+            "It combines a ViT (Vision Transformer) encoder with a GPT-2 decoder trained to describe images in natural language."
         )
 
-    with st.spinner("Generating description... 🧠"):
-        inputs = processor(images=image, text=prompt, return_tensors="pt")
-        outputs = model.generate(
-            **inputs,
-            max_new_tokens=150,
-            num_beams=5,
-            length_penalty=1.5,
-            repetition_penalty=1.2
-        )
-        caption = processor.decode(outputs[0], skip_special_tokens=True)
-
-    st.success("✅ Description Generated!")
-    st.markdown(f"### 📝 {description_mode}\n> {caption}")
-
+# -----------------------------
+# FOOTER
+# -----------------------------
 st.markdown("---")
-st.caption("🚀 Powered by [Salesforce InstructBLIP](https://huggingface.co/Salesforce/instructblip-flan-t5-base)")
+st.caption("Powered by 🤖 ViT-GPT2 | Built with Streamlit")
