@@ -1,3 +1,6 @@
+import os
+os.environ["WATCHDOG_OBSERVER"] = "polling"
+
 import streamlit as st
 from PIL import Image
 from transformers import Blip2Processor, Blip2ForConditionalGeneration
