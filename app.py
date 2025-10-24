@@ -100,7 +100,7 @@ custom_prompt = st.text_area(
 
 if uploaded_file is not None:
     image = Image.open(uploaded_file).convert("RGB")
-    st.image(image, caption="🖼️ Uploaded Image", use_column_width=True)
+    st.image(image, caption="🖼️ Uploaded Image", use_container_width=True)  # FIXED: use_container_width instead of use_column_width
 
     # Generate multiple descriptions option
     generate_multiple = st.checkbox("Generate multiple variations", value=False)
@@ -133,8 +133,8 @@ if uploaded_file is not None:
                                 do_sample=True,  # Enable sampling for variety
                                 early_stopping=True,
                                 no_repeat_ngram_size=2,
-                                length_penalty=1.2,  # Encourage longer sequences
-                                bad_words_ids=[[processor.tokenizer.eos_token_id]]  # Avoid early stopping
+                                length_penalty=1.2  # Encourage longer sequences
+                                # REMOVED: bad_words_ids parameter causing error
                             )
                         
                         caption = processor.decode(output_ids[0], skip_special_tokens=True).strip()
@@ -163,8 +163,8 @@ if uploaded_file is not None:
                             do_sample=True,
                             early_stopping=True,
                             no_repeat_ngram_size=2,
-                            length_penalty=1.2,
-                            bad_words_ids=[[processor.tokenizer.eos_token_id]]
+                            length_penalty=1.2
+                            # REMOVED: bad_words_ids parameter causing error
                         )
                     
                     caption = processor.decode(output_ids[0], skip_special_tokens=True).strip()
